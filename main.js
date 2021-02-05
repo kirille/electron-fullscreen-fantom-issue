@@ -1,5 +1,5 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow} = require('electron')
+const {app, BrowserWindow, ipcMain} = require('electron')
 const path = require('path')
 
 function createWindow () {
@@ -8,15 +8,38 @@ function createWindow () {
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      nodeIntegration: true
     }
   })
+
 
   // and load the index.html of the app.
   mainWindow.loadFile('index.html')
 
+  enterHTMLFullscreen(mainWindow);
+
+  ipcMain.on('do-bug', () => {
+    
+    let htmlPromise = exitHTMLFullscreen(mainWindow);
+
+    htmlPromise.then( (result) => {
+      mainWindow.setFullScreen(true);
+    } );
+  });
+
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
+}
+
+function exitHTMLFullscreen(win) {
+  let script = 'try { document.exitFullscreen() } catch (e) { console.log(\'Catched exception in executeAndCatch: \', e) }';
+  return win.webContents.executeJavaScript( script, true );
+}
+
+function enterHTMLFullscreen(win) {
+  let script = 'try { document.documentElement.requestFullscreen() } catch (e) { console.log(\'Catched exception in executeAndCatch: \', e) }';
+  return win.webContents.executeJavaScript( script, true );
 }
 
 // This method will be called when Electron has finished
@@ -31,6 +54,8 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
+
+
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits

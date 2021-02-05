@@ -1,6 +1,7 @@
 To reproduce the issue:
 
 npm i
+
 npm run start
 
 press Do Bug button
